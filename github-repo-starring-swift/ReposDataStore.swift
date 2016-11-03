@@ -1,8 +1,8 @@
 //
-//  ReposDataStore.swift
-//  github-repo-starring-swift
+//  FISReposDataStore.swift
+//  github-repo-list-swift
 //
-//  Created by Haaris Muneer on 6/28/16.
+//  Created by  susan lovaglio on 10/23/16.
 //  Copyright © 2016 Flatiron School. All rights reserved.
 //
 
@@ -11,21 +11,52 @@ import UIKit
 class ReposDataStore {
     
     static let sharedInstance = ReposDataStore()
-    fileprivate init() {}
     
-    var repositories:[GithubRepository] = []
+    var repositories: [GithubRepository] = []
     
-    func getRepositories(with completion: @escaping () -> ()) {
-        GithubAPIClient.getRepositories { (reposArray) in
-            self.repositories.removeAll()
-            for dictionary in reposArray {
-                guard let repoDictionary = dictionary as? [String : Any] else { fatalError("Object in reposArray is of non-dictionary type") }
-                let repository = GithubRepository(dictionary: repoDictionary)
-                self.repositories.append(repository)
+    func getRepositoriesFromAPI(_ completion: @escaping () -> ()) {
+        
+        GithubAPIClient.getRepositories { (jsonArray) in
+            
+            if !self.repositories.isEmpty { self.repositories.removeAll() }
+            
+            for repoDict in jsonArray {
+                
+                let gitHubRepo = GithubRepository.init(dictionary: repoDict)
+                
+                self.repositories.append(gitHubRepo)
                 
             }
+            
             completion()
         }
+        
     }
-
+    
+    
+    func toggleStarStatus(for repoObject: GithubRepository, completion: @escaping (Bool) -> ()) {
+        
+        GithubAPIClient.checkIfRepositoryIsStarred(repoObject.fullName) { (starred) in
+            
+            if starred {
+                
+                GithubAPIClient.unstarRespository(named: repoObject.fullName, completion: {
+                    
+                    completion(false)
+                })
+                
+            } else {
+                
+                GithubAPIClient.starRespository(named: repoObject.fullName, completion: {
+                    
+                    completion(true)
+                })
+            
+            }
+        }
+    }
+    
+    
+    
+    
 }
